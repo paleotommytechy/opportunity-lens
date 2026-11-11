@@ -6,4 +6,4 @@ User-pasted/manually entered opportunities are private by default. A human revie
 
 **Access policy:** Verified public records are readable by everyone; signed-in users may CRUD their own unverified private records only.
 
-When changing this module, add a *new* timestamped migration for the change after the initial deployment, and keep this module as a current-schema reference. Do not edit already-applied migration files or drop production tables to fix a deployment.
+This file documents the **immutable initial baseline**. Once the initial migration has been applied, do not edit this SQL or its bundled migration. For future changes to this table/function, create a new versioned file in `supabase/migrations/` and a focused note under `database/changes/<version>/<table>/` instead. See `database/changes/README.md`. Never drop production data to correct a migration.

@@ -25,7 +25,7 @@ supabase/
 
 Each module owns **its table, constraints, indexes, RLS policies and grants** in the same `schema.sql`. The generated migration is the *only* file Adebanke should execute for a fresh deployment. Do not separately execute the component files. They are organized source references and must be kept in sync before initial deployment.
 
-**Important:** Once this migration is applied anywhere, treat it as immutable. All subsequent schema changes go into new timestamped migration files, created with `supabase migration new <descriptive_name>`, with a focused PR and a tested rollback/recovery plan. Do not regenerate an already-applied migration.
+**Important:** Once this migration is applied anywhere, treat BOTH the initial bundled migration and all `database/modules/*/schema.sql` files as **immutable baseline files**. Future changes go into NEW timestamped migration files, created with `supabase migration new <descriptive_name>`, with a scoped record under `database/changes/<version>/<table>/`, a focused PR and a tested recovery plan. The initial `build_migration.py --check` deliberately verifies only the historical baseline; don't regenerate that baseline after deployment.
 
 ## First-time owner deployment
 
@@ -71,7 +71,7 @@ These are **static checks** only; they cannot prove that PostgreSQL migrations e
 
 1. Contributor opens feature branch in `paleotommytechy/opportunity-lens` and pushes SQL changes.
 2. Contributor opens PR to `AdebankeDev/opportunity-lens:main` (or sends review link if GitHub's integration lacks PR creation permission).
-3. Adebanke reviews, tests and applies the **exact reviewed migration** from the PR to staging.
+3. Adebanke reviews and tests the **exact reviewed migration** from the PR on staging, after checking the current migration history and schema for conflicts.
 4. After approval/merge and staging validation, Adebanke promotes the migration to production. The fork syncs from upstream; Vercel (linked to the fork's `main`) deploys only approved frontend changes.
 5. Future schema changes are separate versioned migrations; never edit previously deployed migration files. Maintain a small change log in each PR.
 
