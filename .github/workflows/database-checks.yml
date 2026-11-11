@@ -1,0 +1,28 @@
+name: Database contract checks
+
+on:
+  pull_request:
+    paths:
+      - 'database/**'
+      - 'supabase/**'
+      - '.github/workflows/database-checks.yml'
+  push:
+    paths:
+      - 'database/**'
+      - 'supabase/**'
+      - '.github/workflows/database-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify migration source snapshot
+        run: python3 database/scripts/build_migration.py --check
+      - name: Run SQL static security tests
+        run: python3 -m unittest discover -s database/tests -p 'check_*.py' -v
