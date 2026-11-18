@@ -300,3 +300,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  transition-duration:.01ms!important;scroll-behavior:auto!important}
  html{scroll-behavior:auto}
 }
+/* Keyboard users can skip the application shell without visual clutter. */
+.skip-link{position:fixed;top:8px;left:8px;z-index:100;background:#fff;
+ color:#324397;border:2px solid #5969c6;border-radius:12px;padding:12px 17px;
+ transform:translateY(-150%);font-size:14px;font-weight:700}
+.skip-link:focus{transform:translateY(0)}
+@media(max-width:800px){.skip-link{left:16px}}
