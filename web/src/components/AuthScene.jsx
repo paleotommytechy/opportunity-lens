@@ -231,7 +231,7 @@ export default function AuthScene({
           <section className="auth-sheet" aria-label="OpportunityLens account">
             <div className="auth-sheet-symbol"><GraduationCap size={27}/></div>
             {!authReady ? <div className="auth-loading" role="status">Checking your session…</div> :
-            user && !(mode === "update" && recoverySession) ? <>
+            user && mode !== "update" ? <>
               <div className="auth-heading">
                 <h2>You're all set.</h2>
                 <p>Signed in as <strong>{user.email}</strong></p>
