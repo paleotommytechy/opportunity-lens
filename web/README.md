@@ -51,3 +51,45 @@ be treated as authorization.
   database. Nothing is fabricated. No live ingestion or automated email alerts.
 - Checklists/analysis remain session-only until a separate persistence feature
   is implemented.
+
+## Cinematic sign-in and sign-up (2026 redesign)
+
+The authentication experience uses an original SVG dusk landscape (no external
+images or copied artwork) and a single opaque-leaning frosted form panel.
+The scholarship dashboard uses darker, mostly solid surfaces with less glass.
+
+- `/` — full-page sign-in by default
+- `/login` — email/password sign-in or existing-user email link
+- `/signup` — create an email/password account
+- `/reset-password` — password reset landing and new-password form
+- `/app` — scholarship workspace with guest access
+- `/app/profile` and `/app/analyze` — existing profile and analyzer views
+
+Routes use the History API and existing Vercel SPA rewrites. Guest analysis
+is still available, and Supabase session and RLS rules remain intact.
+
+### Supabase Auth setup
+
+1. Enable Email under Supabase Authentication > Providers.
+2. Set Site URL to https://opportunity-lens-web.vercel.app.
+3. Add these Redirect URLs in Authentication > URL Configuration:
+   - https://opportunity-lens-web.vercel.app/login
+   - https://opportunity-lens-web.vercel.app/reset-password
+4. Ensure email confirmations, recovery emails and SMTP deliver correctly
+   before inviting users to register.
+5. Minimum client password length is six characters. Supabase's configured
+   server-side password policy is authoritative.
+6. Google/Apple are not displayed by default. Configure the OAuth provider
+   and its secrets in Supabase first, then set VITE_GOOGLE_AUTH_ENABLED=true
+   or VITE_APPLE_AUTH_ENABLED=true on the Vercel *web* project and redeploy.
+7. Do not expose a Supabase service_role or sb_secret_* key in VITE_*.
+
+### Verification and limitations
+
+Frontend unit tests cover credential helpers and route modes. GitHub CI
+also builds the React app and runs the original Python tests. Real account
+creation, email delivery, password recovery, Google/Apple OAuth and cross-user
+RLS need staged end-to-end tests with the configured Supabase project.
+
+The uploaded inspiration images were used as mood-board guidance only.
+No copied reference photographs, logos, or proprietary artwork are bundled.
