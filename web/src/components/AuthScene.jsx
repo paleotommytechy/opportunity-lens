@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase, supabaseConfigured } from "../lib/supabase.js";
 import "./auth-scene.css";
+import { isValidAccountEmail, hasMinimumPassword, modeFromAccountPath } from "../lib/auth-utils.js";
 
 /** Original vector dusk landscape: no image download, heavy canvas, or third-party asset. */
 function EveningLandscape() {
@@ -76,12 +77,7 @@ function EveningLandscape() {
 
 const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === "true";
 const appleEnabled = import.meta.env.VITE_APPLE_AUTH_ENABLED === "true";
-const initialMode = () => {
-  const path = window.location.pathname;
-  if (path === "/signup") return "signup";
-  if (path === "/reset-password") return "update";
-  return "signin";
-};
+const initialMode = () => modeFromAccountPath(window.location.pathname);
 
 export default function AuthScene({
   user, authReady, profileSync, onGuest, onProfile, onSignOut, signingOut,
@@ -125,10 +121,10 @@ export default function AuthScene({
     }
     setMessage(""); setIsError(false);
     const cleanedEmail = email.trim().toLowerCase();
-    if (mode !== "update" && (!cleanedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanedEmail))) {
+    if (mode !== "update" && !isValidAccountEmail(cleanedEmail)) {
       setMessage("Enter a valid email address."); setIsError(true); return;
     }
-    if ((mode === "signin" || mode === "signup" || mode === "update") && password.length < 6) {
+    if ((mode === "signin" || mode === "signup" || mode === "update") && !hasMinimumPassword(password)) {
       setMessage("Use a password with at least 6 characters."); setIsError(true); return;
     }
     setBusy(true);
