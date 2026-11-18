@@ -11,6 +11,8 @@ import { supabase, supabaseConfigured } from "./lib/supabase.js";
 import { profileFromRow, profileToRow } from "./lib/profile.js";
 import "./styles.css";
 import "./premium.css";
+import "./nocturne.css";
+import AuthScene from "./components/AuthScene.jsx";
 
 const MENU = [
   { id: "overview", name: "Overview", icon: LayoutDashboard },
@@ -58,7 +60,12 @@ async function apiPost(path, payload, apiKey) {
 }
 const split = (s) => s.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
 function App() {
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(() => {
+    const path = window.location.pathname;
+    if (path === "/" || ["/login", "/signup", "/reset-password"].includes(path)) return "account";
+    const section = path.startsWith("/app/") ? path.slice(5) : "overview";
+    return MENU.some((item) => item.id === section) ? section : "overview";
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [key, setKey] = useState("");
@@ -76,8 +83,6 @@ function App() {
   const [notice, setNotice] = useState("");
   const [authUser, setAuthUser] = useState(null);
   const [authReady, setAuthReady] = useState(!supabaseConfigured);
-  const [authEmail, setAuthEmail] = useState("");
-  const [authSent, setAuthSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [profileSync, setProfileSync] = useState("guest");
   const [profileBusy, setProfileBusy] = useState(false);
@@ -175,29 +180,6 @@ function App() {
     return () => { active = false; };
   }, [userId]);
 
-  async function sendSignInLink(event) {
-    event?.preventDefault?.();
-    if (!supabase) return;
-    if (!authEmail.trim() || !/^\S+@\S+\.\S+$/.test(authEmail.trim())) {
-      setNotice("Enter a valid email address.");
-      return;
-    }
-    setAuthBusy(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: authEmail.trim(),
-        options: { emailRedirectTo: window.location.origin, shouldCreateUser: true }
-      });
-      if (error) throw error;
-      setAuthSent(true);
-      setNotice("Sign-in link requested. Check your inbox and spam folder; delivery depends on your Supabase email configuration.");
-    } catch (err) {
-      setNotice(err.message || "Could not send the sign-in link.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
   async function signOutUser() {
     if (!supabase) return;
     setAuthBusy(true);
@@ -211,7 +193,7 @@ function App() {
       setCompleted([]);
       setSavedIds([]);
       setNotice("Signed out. Your cloud profile remains safely stored in Supabase.");
-      navigate("overview");
+      navigate("account");
     } catch (err) { setNotice(err.message || "Could not sign out."); }
     finally { setAuthBusy(false); }
   }
@@ -272,7 +254,27 @@ function App() {
     });
     navigate("analyze");
   }
-  const navigate = (next) => { setTab(next); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const navigate = (next) => {
+    setTab(next);
+    setMenuOpen(false);
+    const nextPath = next === "account" ? "/login" :
+      next === "overview" ? "/app" : "/app/" + next;
+    if (window.location.pathname !== nextPath) window.history.pushState({}, "", nextPath);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  useEffect(() => {
+    function handleBack() {
+      const path = window.location.pathname;
+      if (path === "/" || ["/login", "/signup", "/reset-password"].includes(path)) {
+        setTab("account");
+      } else {
+        const section = path.startsWith("/app/") ? path.slice(5) : "overview";
+        setTab(MENU.some((item) => item.id === section) ? section : "overview");
+      }
+    }
+    window.addEventListener("popstate", handleBack);
+    return () => window.removeEventListener("popstate", handleBack);
+  }, []);
   const flash = (text) => { setNotice(text); };
   const change = (field, value) => setProfile((old) => ({ ...old, [field]: value }));
   const setCriterion = (field, value) => setManual((old) => ({ ...old, [field]: value }));
@@ -323,6 +325,22 @@ function App() {
     } catch (err) {
       flash(err.message || "Could not analyze this opportunity.");
     } finally { setBusy(false); }
+  }
+  if (tab === "account") {
+    return (
+      <>
+        <a href="#main-content" className="skip-link">Skip to account form</a>
+        <AuthScene
+          user={authUser}
+          authReady={authReady}
+          profileSync={profileSync}
+          onGuest={() => navigate("overview")}
+          onProfile={() => navigate("overview")}
+          onSignOut={signOutUser}
+          signingOut={authBusy}
+        />
+      </>
+    );
   }
   const profileCard = <div className="panel profile-progress">
     <div className="panel-kicker">PROFILE READINESS</div>
@@ -429,15 +447,6 @@ function App() {
             <div className="page-header"><span className="eyebrow dark">PREFERENCES & PRIVACY</span><h1>Workspace settings</h1><p>Control how this preview uses AI and handles your information.</p></div>
             <div className="settings-grid"><div className="panel settings-panel"><div className="settings-section"><span className="settings-icon"><KeyRound size={21}/></span><div><h2>Your Google AI Studio key</h2><p>Bring your own API key to extract requirements from scholarship announcements.</p></div></div><label className="field full"><span>Gemma API key <small>Session-only</small></span><input type="password" value={key} onChange={(e)=>setKey(e.target.value)} autoComplete="off" placeholder="Paste your API key here"/></label><div className="form-actions"><p>Never share API keys. Your key is held in memory and sent only when you run an analysis. It is not written to localStorage or the database.</p><button className="button button-soft" onClick={()=>{setKey("");flash("API key cleared from this page.");}}>Clear key</button></div><a className="text-link" target="_blank" rel="noopener noreferrer" href="https://aistudio.google.com/apikey">Get an API key from Google AI Studio <ExternalLink size={14}/></a></div>
               <div className="panel settings-panel"><div className="settings-section"><span className="settings-icon"><ShieldCheck size={21}/></span><div><h2>{authUser ? "Your connected account" : "Account & privacy"}</h2><p>{authUser ? "Academic profile storage is protected by Supabase row-level security." : "Sign in via Supabase Auth to save your academic profile."}</p></div></div><div className="privacy-list"><p><CheckCircle2 size={17}/>{authUser ? "Profile is saved only when you choose Save profile." : "Guest profile stays in memory until the page reloads."}</p><p><CheckCircle2 size={17}/> No scholarship application is submitted automatically.</p><p><CheckCircle2 size={17}/> Only supplied announcements are analyzed.</p><p><Clock3 size={17}/> Email alerts and live discovery are planned.</p></div><div className="action-buttons"><button className="button button-outline" onClick={()=>{setAnalysis(null);setChecklist([]);setCompleted([]);setKey("");setAnnouncement("");if (!authUser) setProfile(INITIAL_PROFILE);flash("In-memory analysis and key cleared.");navigate("overview");}}>Clear session analysis</button><button className="button button-soft" onClick={() => navigate("account")}>{authUser ? "Manage account" : "Sign in"} <ArrowRight size={15}/></button></div></div></div>
-          </>}
-          {tab === "account" && <>
-            <div className="page-header"><span className="eyebrow dark">SECURE STUDENT WORKSPACE</span><h1>{authUser ? "Your account" : "Sign in to OpportunityLens"}</h1><p>Supabase Auth powers sign-in. Your academic profile is protected by row-level security and saved only when you click Save profile.</p></div>
-            <div className="account-panel panel">
-              {!supabaseConfigured ? <><span className="account-icon"><LockKeyhole size={27}/></span><h2>Supabase not configured yet</h2><p>Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY) to the Vercel web project's environment variables, then redeploy. Guest analysis is still available.</p><button className="button button-primary" onClick={() => navigate("analyze")}>Continue as guest <ArrowRight size={16}/></button></>
-              : !authReady ? <><h2>Checking your session…</h2><p>Restoring your Supabase session securely.</p></>
-              : authUser ? <><span className="account-icon"><CheckCircle2 size={27}/></span><h2>You're signed in</h2><p>{authUser.email}</p><div className="account-status"><span>Profile storage</span><strong>{profileSync === "synced" ? "Synced" : profileSync === "loading" ? "Loading…" : profileSync === "error" ? "Database needs setup" : "Not saved yet"}</strong></div><div className="action-buttons"><button className="button button-primary" onClick={() => navigate("profile")}>Go to my profile <ArrowRight size={16}/></button><button className="button button-outline" disabled={authBusy} onClick={signOutUser}>Sign out</button></div></>
-              : <><span className="account-icon"><LockKeyhole size={27}/></span><h2>Continue with your email</h2><p>We'll send a one-time sign-in link. You won't need to create a password.</p><form className="account-form" onSubmit={sendSignInLink}><label className="field"><span>Email address</span><input type="email" required value={authEmail} autoComplete="email" placeholder="you@example.com" onChange={(e) => { setAuthEmail(e.target.value); setAuthSent(false); }}/></label><button className="button button-primary" type="submit" disabled={authBusy}>{authBusy ? "Sending…" : "Send sign-in link"} <ArrowRight size={16}/></button></form>{authSent && <div className="auth-success"><CheckCircle2 size={18}/> If email delivery is configured, a sign-in link has been sent. Open the link from your email to finish signing in.</div>}<p className="auth-small">To enable email links, configure this site's URL under Supabase Authentication → URL Configuration. The default Supabase email service has sending limits.</p></>}
-            </div>
           </>}
         </main>
         <nav className="mobile-dock" aria-label="Quick navigation">
