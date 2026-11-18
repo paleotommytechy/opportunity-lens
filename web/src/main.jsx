@@ -10,6 +10,7 @@ import {
 import { supabase, supabaseConfigured } from "./lib/supabase.js";
 import { profileFromRow, profileToRow } from "./lib/profile.js";
 import "./styles.css";
+import "./premium.css";
 
 const MENU = [
   { id: "overview", name: "Overview", icon: LayoutDashboard },
@@ -334,42 +335,43 @@ function App() {
   </div>;
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <aside className={"sidebar " + (menuOpen ? "show-sidebar" : "")}>
         <button className="brand" onClick={() => navigate("overview")} aria-label="Go to overview">
           <span className="brand-symbol"><GraduationCap size={24} strokeWidth={2.1}/></span>
           <span className="brand-text">Opportunity<span>Lens</span><small>YOUR FUTURE, IN FOCUS</small></span>
         </button>
-        <div className="side-label">WORKSPACE</div>
+        <div className="side-label">EXPLORE</div>
         <nav aria-label="Main navigation">
           {MENU.map((item) => {
             const Icon = item.icon;
-            return <button key={item.id} className={"nav-link " + (tab === item.id ? "nav-selected" : "")} onClick={() => navigate(item.id)}>
+            return <button key={item.id} className={"nav-link " + (tab === item.id ? "nav-selected" : "")} aria-current={tab === item.id ? "page" : undefined} onClick={() => navigate(item.id)}>
               <Icon size={19} strokeWidth={1.9}/><span>{item.name}</span>{tab === item.id && <ChevronRight size={16} className="nav-chevron"/>}
             </button>;
           })}
         </nav>
         <div className="side-bottom">
-          <div className="side-tip"><Sparkles size={22}/><strong>Clarity before applying.</strong><p>Find the requirements, see where you stand, and prepare with confidence.</p></div>
+          <div className="side-tip"><Sparkles size={22}/><strong>Make your next step count.</strong><p>Understand the details before you invest time in applying.</p></div>
           <button className="side-user side-user-button" onClick={() => navigate("account")}><span className="user-avatar"><UserCircle2 size={22}/></span><span><strong>{authUser?.email || "Guest workspace"}</strong><small>{authUser ? "Signed in with Supabase" : supabaseConfigured ? "Sign in to sync" : "Preview • not connected"}</small></span></button>
         </div>
       </aside>
       {menuOpen && <button className="mobile-shade" aria-label="Close navigation" onClick={() => setMenuOpen(false)}/>}
       <div className="body-shell">
         <header className="topbar">
-          <div className="topbar-left"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22}/></button><span className="crumb">WORKSPACE <span>/</span> <strong>{MENU.find((x) => x.id === tab)?.name}</strong></span></div>
+          <div className="topbar-left"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22}/></button><span className="crumb">YOUR WORKSPACE <span>/</span> <strong>{MENU.find((x) => x.id === tab)?.name}</strong></span></div>
           <div className="topbar-right"><span className="preview-pill"><span className="dot"/> PREVIEW</span><span className={"api-pill " + (apiStatus === "online" ? "healthy" : "")}>{apiStatus === "checking" ? "Checking API" : apiStatus === "online" ? "API connected" : "API unavailable"}</span><button className="auth-header" onClick={() => navigate("account")}><UserCircle2 size={16}/>{authUser ? "Account" : supabaseConfigured ? "Sign in" : "Guest"}</button><button className="user-button" aria-label="Open settings" onClick={() => navigate("settings")}><Settings size={17}/></button></div>
         </header>
-        <main className="page-content">
+        <main id="main-content" className="page-content">
           {notice && <div className="notice" role="status"><Info size={18}/><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss message"><X size={17}/></button></div>}
           {tab === "overview" && <>
-            <div className="dashboard-top"><span className="eyebrow">YOUR PERSONAL SCHOLARSHIP WORKSPACE</span><h1>Discover what's possible.<br/><em>Know where you stand.</em></h1><p>Turn scholarship requirements into clear answers and practical next steps, with the original OpportunityLens eligibility engine.</p><div className="hero-buttons"><button className="button button-white" onClick={() => navigate("analyze")}>Analyze an opportunity <ArrowRight size={17}/></button><button className="button button-outline-white" onClick={() => navigate("profile")}>Set up your profile</button></div><div className="hero-orb"><span className="orb-ring orb-first"/><span className="orb-ring orb-second"/><div className="orb-center"><Sparkles size={44}/></div><div className="floating-note note-one"><ShieldCheck size={17}/> Explainable results</div><div className="floating-note note-two"><FileCheck2 size={17}/> Application ready</div></div></div>
+            <div className="dashboard-top"><span className="eyebrow">A CLEARER PATH STARTS HERE</span><h1>Your future,<br/><em>a little clearer.</em></h1><p>Explore scholarships, understand the requirements and plan your next move with confidence.</p><div className="hero-buttons"><button className="button button-white" onClick={() => navigate("analyze")}>Check an opportunity <ArrowRight size={17}/></button><button className="button button-outline-white" onClick={() => navigate("profile")}>My academic profile</button></div><div className="hero-orb"><span className="orb-ring orb-first"/><span className="orb-ring orb-second"/><div className="orb-center"><Sparkles size={44}/></div><div className="floating-note note-one"><ShieldCheck size={17}/> Explainable results</div><div className="floating-note note-two"><FileCheck2 size={17}/> Application ready</div></div></div>
             <div className="stats-grid">
               <div className="stat-card"><span className="stat-icon blue"><UserCircle2 size={22}/></span><div><strong>{profilePercent}%</strong><p>Profile completion</p></div></div>
               <div className="stat-card"><span className="stat-icon violet"><FileSearch size={22}/></span><div><strong>{analysis ? "1" : "0"}</strong><p>Opportunities analyzed</p></div></div>
               <div className="stat-card"><span className="stat-icon green"><ClipboardCheck size={22}/></span><div><strong>{doneCount}/{checklist.length}</strong><p>Checklist items completed</p></div></div>
             </div>
-            <div className="dashboard-columns">
-              <section className="panel getting-started"><div className="section-head"><div><div className="panel-kicker">GETTING STARTED</div><h2>Three steps to your next opportunity</h2></div></div>
+            <div className="dashboard-columns" aria-label="Your next steps">
+              <section className="panel getting-started"><div className="section-head"><div><div className="panel-kicker">A GOOD PLACE TO START</div><h2>One step at a time</h2></div></div>
                 {[{title:"Build your student profile",desc:"Add your institution, academic level, course and CGPA.",icon:UserCircle2,to:"profile",ready:profilePercent===100},
                   {title:"Understand scholarship requirements",desc:"Paste a real announcement or enter criteria yourself.",icon:FileSearch,to:"analyze",ready:!!analysis},
                   {title:"Prepare your application",desc:"Review evidence, missing information and required documents.",icon:ClipboardCheck,to:"checklist",ready:!!analysis&&checklist.length>0}].map((step,i)=>{
@@ -377,7 +379,7 @@ function App() {
                   return <button className="guide-step" key={step.title} onClick={() => navigate(step.to)}><span className={"guide-number " + (step.ready ? "step-ready" : "")}>{step.ready ? <Check size={16}/> : "0"+(i+1)}</span><span className="guide-content"><strong>{step.title}</strong><small>{step.desc}</small></span><ArrowUpRight size={18}/></button>;
                 })}
               </section>
-              <section className="panel aside-panel"><div className="panel-kicker">SMART MATCHING</div><span className="aside-spark"><WandSparkles size={24}/></span><h2>Not just a list of scholarships.</h2><p>OpportunityLens separates clear eligibility rules from requirements that still need human verification.</p><div className="feature-list"><span><CheckCircle2 size={17}/> Evidence-based eligibility checks</span><span><CheckCircle2 size={17}/> No invented CGPA conversions</span><span><CheckCircle2 size={17}/> Actionable preparation checklist</span></div><button className="text-button" onClick={() => navigate("analyze")}>Explore the analyzer <ArrowRight size={15}/></button></section>
+              <section className="panel aside-panel"><div className="panel-kicker">WHAT MAKES IT USEFUL</div><span className="aside-spark"><WandSparkles size={24}/></span><h2>More clarity. Less guesswork.</h2><p>OpportunityLens separates clear eligibility rules from requirements that still need human verification.</p><div className="feature-list"><span><CheckCircle2 size={17}/> Evidence-based eligibility checks</span><span><CheckCircle2 size={17}/> No invented CGPA conversions</span><span><CheckCircle2 size={17}/> Actionable preparation checklist</span></div><button className="text-button" onClick={() => navigate("analyze")}>Explore the analyzer <ArrowRight size={15}/></button></section>
             </div>
           </>}
           {tab === "discover" && <>
@@ -438,6 +440,18 @@ function App() {
             </div>
           </>}
         </main>
+        <nav className="mobile-dock" aria-label="Quick navigation">
+          {MENU.filter((item) => ["overview", "discover", "analyze", "profile"].includes(item.id)).map((item) => {
+            const Icon = item.icon;
+            return <button key={item.id} type="button"
+              className={"dock-item " + (tab === item.id ? "dock-selected" : "")}
+              aria-current={tab === item.id ? "page" : undefined}
+              onClick={() => navigate(item.id)}>
+              <Icon size={19} strokeWidth={1.9}/>
+              <span>{item.id === "overview" ? "Home" : item.id === "analyze" ? "Analyze" : item.id === "profile" ? "Profile" : item.name}</span>
+            </button>;
+          })}
+        </nav>
         <footer className="footer"><span>OpportunityLens · Open-source scholarship clarity</span><span>Early web preview · Built on the existing Python eligibility engine</span></footer>
       </div>
     </div>
