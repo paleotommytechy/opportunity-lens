@@ -85,6 +85,7 @@ export default function AuthScene({
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -105,7 +106,7 @@ export default function AuthScene({
   }, []);
 
   const changeMode = (next) => {
-    setMode(next); setPassword(""); setMessage(""); setIsError(false);
+    setMode(next); setPassword(""); setConfirmPassword(""); setMessage(""); setIsError(false);
     if (next === "signin" || next === "signup") {
       const path = next === "signup" ? "/signup" : "/login";
       if (window.location.pathname !== path) window.history.replaceState({}, "", path);
@@ -126,6 +127,9 @@ export default function AuthScene({
     }
     if ((mode === "signin" || mode === "signup" || mode === "update") && !hasMinimumPassword(password)) {
       setMessage("Use a password with at least 6 characters."); setIsError(true); return;
+    }
+    if ((mode === "signup" || mode === "update") && password !== confirmPassword) {
+      setMessage("Your passwords do not match."); setIsError(true); return;
     }
     setBusy(true);
     try {
@@ -156,7 +160,8 @@ export default function AuthScene({
         if (error) throw error;
         setMessage("If this email has an account, check your inbox for a sign-in link.");
       } else if (mode === "update") {
-        if (!recoverySession) {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
           throw new Error("Open a valid password-reset link from your email to update the password.");
         }
         const { error } = await supabase.auth.updateUser({password});
@@ -268,6 +273,15 @@ export default function AuthScene({
                       aria-pressed={showPassword} onClick={()=>setShowPassword(p=>!p)}>
                       {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
                     </button>
+                  </span>
+                </label>}
+                {(mode === "signup" || mode === "update") && <label className="auth-field">
+                  <span>Confirm password</span>
+                  <span className="auth-input-wrap"><LockKeyhole size={18}/>
+                    <input type={showPassword ? "text" : "password"} value={confirmPassword}
+                      autoComplete="new-password" required minLength={6}
+                      placeholder="Re-enter your password"
+                      onChange={e=>setConfirmPassword(e.target.value)}/>
                   </span>
                 </label>}
                 {mode === "signin" && <div className="auth-form-row"><button type="button" className="auth-inline" onClick={()=>changeMode("forgot")}>Forgot password?</button></div>}
